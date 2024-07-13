@@ -1,6 +1,6 @@
 "use client";
-import { MessageCircleQuestion, Check, Loader2 } from "lucide-react";
-
+import { Check, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,11 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { verifySmartContract } from "@/services/verifySmartContract";
-import { InputFile } from "@/components/ui/inputFile";
 import { getVerifiedContracts } from "@/services/getVerifiedContracts";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,11 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const notifications = [
+  {
+    title: "HelloWorldThree.json",
+    description: "Verification Successful",
+    contract: "0xE38fb2A52Fd92D2821A41d4eD9e4301D48AF9807",
+    success: true,
+  },
   {
     title: "HelloWorld.json",
     description: "Verification Successful",
@@ -44,23 +46,12 @@ const notifications = [
   },
 ];
 
-export interface FormState {
-  contract_address: string;
-  contract_name: string | undefined;
-  compiler_version: string;
-  file: File | undefined;
-  license_type: string;
-}
-
 export default function Home() {
-  const [switchOn, setSwitchOn] = useState(false);
-  const [formState, setFormState] = useState<FormState>({
-    contract_address: "",
-    contract_name: undefined,
-    compiler_version: "",
-    file: undefined,
-    license_type: "",
-  });
+  const { register, handleSubmit, setValue, watch } = useForm();
+  const onSubmit = (data: any) => verifyContract(data);
+  const licenseType = watch("license_type");
+  const compilerVersion = watch("compiler_version");
+
   const { toast } = useToast();
   const { mutate: verifyContract, isPending: verifyLoading } = useMutation({
     mutationFn: verifySmartContract,
@@ -155,99 +146,61 @@ export default function Home() {
             <CardTitle>Verify Smart Contract</CardTitle>
             <CardDescription>Add your JSON below and verify</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className=" flex items-center space-x-4 rounded-md border p-4">
-              <MessageCircleQuestion />
-              <div className="flex-1 space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  Don't have a contract but want to try it out?
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Use test contract
-                </p>
+          <form
+            className="flex flex-col gap-2"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <CardContent className="grid gap-4">
+              <div className="py-4">
+                {notifications.map((notification, index) => (
+                  <a
+                    key={index}
+                    href={
+                      notification?.contract
+                        ? `https://eth-sepolia.blockscout.com/address/${notification.contract}`
+                        : "#"
+                    }
+                    target="_blank"
+                    className="mb-4 grid grid-cols-[25px_1fr] items-start pb-4 last:mb-0 last:pb-0"
+                  >
+                    <span
+                      className={`flex h-2 w-2 translate-y-1 rounded-full ${
+                        notification.success ? "bg-emerald-400" : "bg-rose-600"
+                      }`}
+                    />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {notification.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {notification.description}
+                      </p>
+                    </div>
+                  </a>
+                ))}
               </div>
-              <Switch
-                checked={switchOn}
-                onCheckedChange={async () => {
-                  setSwitchOn(!switchOn);
-                  setFormState({
-                    contract_address: switchOn
-                      ? ""
-                      : "0x855e5ab62E7ccdB3784E313df5abc1E1275cE043",
-                    contract_name: undefined,
-                    compiler_version: switchOn ? "" : "v0.8.26+commit.8a97fa7a",
-                    file: undefined,
-                    license_type: switchOn ? "" : "unlicense",
-                  });
-                }}
-              />
-            </div>
-            <div className="py-4">
-              {notifications.map((notification, index) => (
-                <a
-                  key={index}
-                  href={
-                    notification?.contract
-                      ? `https://eth-sepolia.blockscout.com/address/${notification.contract}`
-                      : "#"
-                  }
-                  target="_blank"
-                  className="mb-4 grid grid-cols-[25px_1fr] items-start pb-4 last:mb-0 last:pb-0"
-                >
-                  <span
-                    className={`flex h-2 w-2 translate-y-1 rounded-full ${
-                      notification.success ? "bg-emerald-400" : "bg-rose-600"
-                    }`}
-                  />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {notification.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {notification.description}
-                    </p>
-                  </div>
-                </a>
-              ))}
-            </div>
-            <form className="flex flex-col gap-2">
+
               <Input
                 type="text"
                 placeholder="Contract Address"
-                value={formState.contract_address}
-                onChange={(e) =>
-                  setFormState({
-                    ...formState,
-                    contract_address: e.target.value,
-                  })
-                }
+                {...register("contract_address")}
               />
               <Select
-                value={formState.license_type}
-                onValueChange={(val) =>
-                  setFormState({
-                    ...formState,
-                    license_type: val,
-                  })
-                }
+                value={licenseType}
+                onValueChange={(val) => setValue("license_type", val)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a contract license" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="unlicense">Unlicense</SelectItem>
+                    <SelectItem value="2">Unlicense</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
               <Select
-                value={formState.compiler_version}
-                onValueChange={(val) =>
-                  setFormState({
-                    ...formState,
-                    compiler_version: val,
-                  })
-                }
+                value={compilerVersion}
+                onValueChange={(val) => setValue("compiler_version", val)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a compiler version" />
@@ -260,42 +213,19 @@ export default function Home() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-              {switchOn ? (
-                <div className="px-3">
-                  <Label>HelloWorld2.json</Label>
-                </div>
-              ) : (
-                <InputFile
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    console.log({
-                      e: e,
-                      etar: e.target,
-                      etarfil: e.target?.files,
-                    });
-                    setFormState({
-                      ...formState,
-                      file: e?.target?.files?.[0],
-                    });
-                  }}
-                />
-              )}
-            </form>
-          </CardContent>
-          <CardFooter className="self-end">
-            <Button
-              disabled={verifyLoading}
-              type="submit"
-              className="w-full"
-              onClick={() => verifyContract(formState)}
-            >
-              {verifyLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="mr-2 h-4 w-4" />
-              )}{" "}
-              Verify Smart Contract
-            </Button>
-          </CardFooter>
+              <Input id="file" type="file" {...register("file")} />
+            </CardContent>
+            <CardFooter>
+              <Button disabled={verifyLoading} type="submit" className="w-full">
+                {verifyLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-2 h-4 w-4" />
+                )}{" "}
+                Verify Smart Contract
+              </Button>
+            </CardFooter>
+          </form>
         </Card>
       </div>
     </main>
