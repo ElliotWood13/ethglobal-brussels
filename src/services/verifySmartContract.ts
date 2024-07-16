@@ -23,6 +23,9 @@ export const verifySmartContract = async (formState: FormState) => {
       `https://eth-sepolia.blockscout.com/api/v2/smart-contracts/${contract_address}/verification/via/standard-input`,
       {
         method: "POST",
+        headers: {
+          Authorization: process.env.API_KEY ?? "",
+        },
         body: formData,
       }
     );

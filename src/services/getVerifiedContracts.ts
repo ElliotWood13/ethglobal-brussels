@@ -4,7 +4,7 @@ export const getVerifiedContracts = async () => {
     {
       method: "GET",
       headers: {
-        Authorization: "Bearer 14fa1114-d8bd-4f86-aed1-97179ab50f8d",
+        Authorization: process.env.API_KEY ?? "",
       },
     }
   );

@@ -73,7 +73,7 @@ export default function Home() {
   const { data, error, isLoading } = useQuery({
     queryKey: ["verifiedContracts"],
     queryFn: getVerifiedContracts,
-    // refetchInterval: 5000
+    refetchInterval: 5000,
   });
   const verifiedContracts = data?.items?.slice(0, 4);
 
